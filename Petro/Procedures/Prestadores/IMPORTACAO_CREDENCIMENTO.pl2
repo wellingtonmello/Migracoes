@@ -1,0 +1,322 @@
+procedure IMPORTACAO_CREDENCIMENTO;
+
+version '1.0.0.0';
+
+rem 'Descrever a funcionalidade da procedure';
+
+declare
+v_StatusPrestador               varchar(20);
+v_CodStatus                     varchar(1);
+v_DescMotivo                    varchar(50);
+v_Prestador                     varchar(20);
+v_CredencimentoDescrData        date;
+v_DataProcessoCredDescr         date;
+v_TipoPrestadorCre              int;
+v_CategoriaCre                  int;
+v_HandleDescredMotivo           int;
+v_TipoPrestadorDes              int;
+v_CategoriaDes                  int;
+v_TipoProcesso                  varchar(1);
+v_MotivoAfastamento             int;
+c_Credenc                       cursor;
+v_RowId                         varchar(15);
+v_HandleResponsavel             int;
+v_HandleRegistro                int;
+v_HandlePrestador               int;
+v_HandleTipoPrestador           int;
+v_HandleCategoriaPrestador      int;
+v_HandleTipoPrestadorDes        int;
+v_HandleCategoriaPrestadorDes   int;
+v_HandleMotivoAfastamento       int;
+v_Erro                          varchar(1);
+
+begin --InternalName: IMPORTACAO_CREDENCIMENTO
+--CREATE table TMP_MIG_CREDENCIAMENTO
+--(STATUS_PRESTADOR VARCHAR2(20),
+--COD_STATUS VARCHAR2(1),
+--DESC_MOTIVO VARCHAR2(50),
+--PRESTADOR VARCHAR2(20),
+--CREDENCIAMENTODATA DATE,
+--DATAPROCESSOCRED DATE,
+--TIPOPRESTADORCRE NUMBER(10),
+--CATEGORIACRE NUMBER(10),
+--DESCREDENCIAMENTODATA DATE,
+--DATAPROCESSODESCRED DATE,
+--DESCREDENCIAMENTOMOTIVO NUMBER(10),
+--TIPOPRESTADORDES NUMBER(10),
+--CATEGORIADES NUMBER(10),
+--TIPOPROCESSO VARCHAR2(1),
+--MOTIVOAFASTAMENTO NUMBER(10),
+--STATUS_IMPORTACAO VARCHAR2(1),
+--ERRO VARCHAR2 (50))
+
+--Validações
+SELECT HANDLE
+  INTO v_HandleResponsavel
+  FROM Z_GRUPOUSUARIOS 
+ WHERE APELIDO = 'migracao';
+     
+for c_Credenc IN 
+  (SELECT X.ROWID,
+           X.STATUS_PRESTADOR,
+           X.COD_STATUS,
+           X.DESC_MOTIVO,
+           X.PRESTADOR,
+           X.CREDENCIAMENTODATA,
+           X.DATAPROCESSOCRED,
+           X.TIPOPRESTADORCRE,
+           X.CATEGORIACRE,
+           X.DESCREDENCIAMENTOMOTIVO,
+           X.TIPOPRESTADORDES,
+           X.CATEGORIADES,
+           X.TIPOPROCESSO,
+           X.MOTIVOAFASTAMENTO 
+      INTO v_RowId,
+           v_StatusPrestador,
+           v_CodStatus,
+           v_DescMotivo,
+           v_Prestador,
+           v_CredencimentoDescrData,
+           v_DataProcessoCredDescr,
+           v_TipoPrestadorCre,
+           v_CategoriaCre,
+           v_HandleDescredMotivo,
+           v_TipoPrestadorDes,
+           v_CategoriaDes,
+           v_TipoProcesso,
+           v_MotivoAfastamento
+      FROM
+    (SELECT ROWID, 
+          STATUS_PRESTADOR,
+          COD_STATUS,
+          DESC_MOTIVO,
+          PRESTADOR,
+          CREDENCIAMENTODATA,
+          DATAPROCESSOCRED,
+          TIPOPRESTADORCRE,
+          CATEGORIACRE,
+          DESCREDENCIAMENTOMOTIVO,
+          TIPOPRESTADORDES,
+          CATEGORIADES,
+          TIPOPROCESSO,
+          MOTIVOAFASTAMENTO
+     FROM TMP_MIG_CREDENCIAMENTO
+    WHERE COD_STATUS = '1'
+   UNION 
+  SELECT ROWID, 
+         STATUS_PRESTADOR,
+         COD_STATUS,
+         DESC_MOTIVO,
+         PRESTADOR,
+         DESCREDENCIAMENTODATA,
+         DATAPROCESSODESCRED,
+         TIPOPRESTADORCRE,
+         CATEGORIACRE,
+         DESCREDENCIAMENTOMOTIVO,
+         TIPOPRESTADORDES,
+         CATEGORIADES,
+         TIPOPROCESSO,
+         MOTIVOAFASTAMENTO
+    FROM TMP_MIG_CREDENCIAMENTO 
+    WHERE COD_STATUS <> '1') X ) 
+loop
+  --Validações
+  v_HandlePrestador := NULL;
+  v_Erro := NULL;
+  v_HandleMotivoAfastamento := NULL;
+  
+  SELECT HANDLE
+    INTO v_HandlePrestador
+    FROM SAM_PRESTADOR 
+   WHERE PRESTADOR = v_Prestador;
+  
+  if (nvl(v_HandlePrestador,0) = 0) then
+    v_Erro := 'E';
+    UPDATE TMP_MIG_CREDENCIAMENTO 
+       SET STATUS_IMPORTACAO = v_Erro,
+           ERRO = 'PRESTADOR NÃO ENCONTRADO' 
+     WHERE ROWID = v_RowId;
+  end if; 
+  
+  if (nvl(v_TipoPrestadorCre,0) > 0) then
+    SELECT HANDLE 
+      INTO v_HandleTipoPrestador
+      FROM SAM_TIPOPRESTADOR 
+     WHERE CODIGO = v_TipoPrestadorCre;
+  else
+    SELECT TIPOPRESTADOR
+      INTO v_HandleTipoPrestador
+      FROM SAM_PRESTADOR      
+     WHERE HANDLE = v_HandlePrestador;
+  end if;
+  
+  if (nvl(v_CategoriaCre, 0) > 0) then 
+    SELECT HANDLE 
+      INTO v_HandleCategoriaPrestador
+      FROM SAM_TIPOPRESTADOR 
+     WHERE CODIGO = v_CategoriaCre;
+  else
+    SELECT CATEGORIA
+      INTO v_HandleCategoriaPrestador
+      FROM SAM_PRESTADOR      
+     WHERE HANDLE = v_HandlePrestador;
+  end if;
+  
+  if (nvl(v_TipoPrestadorDes,0) > 0) then
+    SELECT HANDLE 
+      INTO v_HandleTipoPrestadorDes
+      FROM SAM_TIPOPRESTADOR 
+     WHERE CODIGO = v_TipoPrestadorDes;
+  else
+    SELECT TIPOPRESTADOR
+      INTO v_HandleTipoPrestadorDes
+      FROM SAM_PRESTADOR      
+     WHERE HANDLE = v_HandlePrestador;
+  end if;
+  
+  if (nvl(v_CategoriaDes, 0) > 0) then
+    SELECT HANDLE 
+      INTO v_HandleCategoriaPrestadorDes
+      FROM SAM_TIPOPRESTADOR 
+     WHERE CODIGO = v_CategoriaDes;
+  else
+    SELECT CATEGORIA
+      INTO v_HandleCategoriaPrestadorDes
+      FROM SAM_PRESTADOR      
+     WHERE HANDLE = v_HandlePrestador;
+  end if;
+  
+  if (v_CredencimentoDescrData = NULL) then
+    v_Erro := 'E';
+    UPDATE TMP_MIG_CREDENCIAMENTO 
+       SET STATUS_IMPORTACAO = v_Erro,
+           ERRO = 'DATACRED - DESCRED  INVALIDA' 
+     WHERE ROWID = v_RowId;
+  end if;
+  
+  if((v_CodStatus = '2') and nvl(v_MotivoAfastamento,0) = 0) then
+    v_Erro := 'E';
+    UPDATE TMP_MIG_CREDENCIAMENTO 
+       SET STATUS_IMPORTACAO = v_Erro,
+           ERRO = 'MOTIVO AFASTAMENTO INVALIDO' 
+     WHERE ROWID = v_RowId;
+  else
+    SELECT HANDLE
+      INTO v_HandleMotivoAfastamento
+      FROM SAM_MOTIVOAFASTAMENTO   
+     WHERE CODIGO = v_MotivoAfastamento;
+     
+    if (nvl(v_HandleMotivoAfastamento,0) = 0) then
+      v_Erro := 'E';
+      UPDATE TMP_MIG_CREDENCIAMENTO 
+         SET STATUS_IMPORTACAO = v_Erro,
+             ERRO = 'MOTIVO AFASTAMENTO NAO ENCONTRADO' 
+       WHERE ROWID = v_RowId;
+    end if;   
+  end if;
+    
+  if((v_CodStatus <> '2') and (nvl(v_Erro,'N') = 'N')) then--ativo
+    v_HandleRegistro := nextVal('SEQ_PRE0065');
+    INSERT INTO SAM_PRESTADOR_PROC (
+           HANDLE,
+           Z_GRUPO,
+           RESPONSAVEL,
+           PROCESSO,
+           PRESTADOR,
+           TIPOPROCESSO,
+           DATAINICIAL,
+           DATAFINAL,
+           DESCRENDENCIAFILIAIS,
+           PROTOCOLO,
+           SITUACAOPROCESSAMENTO,
+           OCORRENCIAS,
+           DESCREDENCIARCOMFATURASABERTAS,
+           FECHARVIGENCIAS,
+           FECHARVIGENCIATABELAPRECO,
+           CONFIRMARCPFPRESTADOR,
+           EDITAL,
+           ESPECIALIDADEFORAEDITAL,
+           ESPECIALIDADESEMVAGADISPONIVEL,
+           CONFIRMARDADOSESOCIAL,
+           PROCESSOPORTAL,
+           NUMEROPROCESSOSEI)
+    SELECT v_HandleRegistro,
+           NULL,
+           v_HandleResponsavel,
+           v_HandleRegistro,
+           v_HandlePrestador,
+           v_TipoProcesso,
+           v_CredencimentoDescrData,
+           v_CredencimentoDescrData,
+           'N',
+           NULL PROTOCOLO,
+           '5' SITUACAOPROCESSAMENTO,
+           NULL OCORRENCIAS,
+           'N' DESCREDENCIARCOMFATURASABERTAS,
+           'S' FECHARVIGENCIAS,
+           'S' FECHARVIGENCIATABELAPRECO,
+           'N' CONFIRMARCPFPRESTADOR,
+           NULL EDITAL,
+           'N' ESPECIALIDADEFORAEDITAL,
+           'N' ESPECIALIDADESEMVAGADISPONIVEL,
+           'N' CONFIRMARDADOSESOCIAL,
+           'N' PROCESSOPORTAL,
+           NULL NUMEROPROCESSOSEI FROM DUAL;
+    if (v_TipoProcesso = 'C') then
+     INSERT INTO SAM_PRESTADOR_PROC_CREDEN
+     (HANDLE,
+      DATACREDENCIAMENTO,
+      TIPOCREDENCIAMENTO,
+      NOVAFILIAL,
+      OBSERVACAO
+     ) 
+     SELECT nextVal('SEQ_PRE0066') HANDLE,
+      v_CredencimentoDescrData DATACREDDESCRED,
+      1 TIPOCREDENCIAMENTO,
+      1 NOVAFILIAL,
+      'Registro Migrado' OBSERVACAO
+     FROM DUAL;
+    else 
+      if (v_TipoProcesso = 'D') then
+         INSERT INTO SAM_PRESTADOR_PROC_DESCRE
+         (HANDLE,
+          TABPARECERSEDE,
+          DATADESCRESEDE,
+          MOTIVODESCRESEDE,
+          JUSTIFICATIVASEDE,
+          FILIAL,
+          TABPARECERREPRE,
+          DATADESCREREPRE,
+          MOTIVODESCREREPRE,
+          JUSTIFICATIVAREPRE)
+         SELECT nextVal('SEQ_PRE075') HANDLE,
+          '2' TABPARECERSEDE,
+          v_CredencimentoDescrData DATADESCRESEDE,
+          v_HandleDescredMotivo MOTIVODESCRESEDE,
+          'Registro Migrado' JUSTIFICATIVASEDE, 
+          1 FILIAL,
+          '2' TABPARECERREPRE,
+          v_CredencimentoDescrData DATADESCREREPRE,
+          v_HandleDescredMotivo MOTIVODESCREREPRE,
+          'Registro Migrado' JUSTIFICATIVAREPRE
+         FROM DUAL;
+      end if;
+    end if;
+  else 
+    if (v_CodStatus = '2') then
+      INSERT INTO SAM_PRESTADOR_AFASTAMENTO
+      (HANDLE,
+       PRESTADOR,
+       MOTIVOAFASTAMENTO,
+       OBSERVACAO,
+       INCLUIDOPOR)
+       SELECT nextVal('SEQ_SAM_PRESTADOR_AFASTAMENTO') HANDLE,
+              v_HandlePrestador PRESTADOR,
+              v_HandleMotivoAfastamento,
+              'Incluido por Migração',
+              v_HandleResponsavel
+          FROM DUAL;
+    end if;           
+  end if;
+end loop;  
+end;
