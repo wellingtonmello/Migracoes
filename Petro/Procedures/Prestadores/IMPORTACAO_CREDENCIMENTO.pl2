@@ -9,7 +9,8 @@ v_StatusPrestador               varchar(20);
 v_CodStatus                     varchar(1);
 v_DescMotivo                    varchar(50);
 v_Prestador                     varchar(20);
-v_CredencimentoDescrData        date;
+v_CredencimentoData             date;
+v_DescredenciamentoData         date;
 v_DataProcessoCredDescr         date;
 v_TipoPrestadorCre              int;
 v_CategoriaCre                  int;
@@ -19,7 +20,7 @@ v_CategoriaDes                  int;
 v_TipoProcesso                  varchar(1);
 v_MotivoAfastamento             int;
 c_Credenc                       cursor;
-v_RowId                         varchar(15);
+v_RowId                         varchar(50);
 v_HandleResponsavel             int;
 v_HandleRegistro                int;
 v_HandlePrestador               int;
@@ -55,6 +56,8 @@ SELECT HANDLE
   INTO v_HandleResponsavel
   FROM Z_GRUPOUSUARIOS 
  WHERE APELIDO = 'migracao';
+
+UPDATE TMP_MIG_CREDENCIAMENTO set erro = NULL, STATUS_IMPORTACAO = NULL;
      
 for c_Credenc IN 
   (SELECT X.ROWID,
@@ -63,7 +66,7 @@ for c_Credenc IN
            X.DESC_MOTIVO,
            X.PRESTADOR,
            X.CREDENCIAMENTODATA,
-           X.DATAPROCESSOCRED,
+           X.DESCREDENCIAMENTODATA,
            X.TIPOPRESTADORCRE,
            X.CATEGORIACRE,
            X.DESCREDENCIAMENTOMOTIVO,
@@ -76,8 +79,8 @@ for c_Credenc IN
            v_CodStatus,
            v_DescMotivo,
            v_Prestador,
-           v_CredencimentoDescrData,
-           v_DataProcessoCredDescr,
+           v_CredencimentoData,
+           v_DescredenciamentoData,
            v_TipoPrestadorCre,
            v_CategoriaCre,
            v_HandleDescredMotivo,
@@ -92,7 +95,7 @@ for c_Credenc IN
           DESC_MOTIVO,
           PRESTADOR,
           CREDENCIAMENTODATA,
-          DATAPROCESSOCRED,
+          DESCREDENCIAMENTODATA,
           TIPOPRESTADORCRE,
           CATEGORIACRE,
           DESCREDENCIAMENTOMOTIVO,
@@ -100,30 +103,16 @@ for c_Credenc IN
           CATEGORIADES,
           TIPOPROCESSO,
           MOTIVOAFASTAMENTO
-     FROM TMP_MIG_CREDENCIAMENTO
-    WHERE COD_STATUS = '1'
-   UNION 
-  SELECT ROWID, 
-         STATUS_PRESTADOR,
-         COD_STATUS,
-         DESC_MOTIVO,
-         PRESTADOR,
-         DESCREDENCIAMENTODATA,
-         DATAPROCESSODESCRED,
-         TIPOPRESTADORCRE,
-         CATEGORIACRE,
-         DESCREDENCIAMENTOMOTIVO,
-         TIPOPRESTADORDES,
-         CATEGORIADES,
-         TIPOPROCESSO,
-         MOTIVOAFASTAMENTO
-    FROM TMP_MIG_CREDENCIAMENTO 
-    WHERE COD_STATUS <> '1') X ) 
+     FROM TMP_MIG_CREDENCIAMENTO) X ) 
 loop
   --Validações
   v_HandlePrestador := NULL;
   v_Erro := NULL;
   v_HandleMotivoAfastamento := NULL;
+  v_HandleCategoriaPrestador := NULL;
+  v_HandleCategoriaPrestadorDes := NULL;
+  v_HandleTipoPrestador := NULL;
+  v_HandleTipoPrestadorDes := NULL;
   
   SELECT HANDLE
     INTO v_HandlePrestador
@@ -186,11 +175,11 @@ loop
      WHERE HANDLE = v_HandlePrestador;
   end if;
   
-  if (v_CredencimentoDescrData = NULL) then
+  if (v_CredencimentoData = NULL) then
     v_Erro := 'E';
     UPDATE TMP_MIG_CREDENCIAMENTO 
        SET STATUS_IMPORTACAO = v_Erro,
-           ERRO = 'DATACRED - DESCRED  INVALIDA' 
+           ERRO = 'DATACRED - INVALIDA' 
      WHERE ROWID = v_RowId;
   end if;
   
@@ -201,18 +190,20 @@ loop
            ERRO = 'MOTIVO AFASTAMENTO INVALIDO' 
      WHERE ROWID = v_RowId;
   else
-    SELECT HANDLE
-      INTO v_HandleMotivoAfastamento
-      FROM SAM_MOTIVOAFASTAMENTO   
-     WHERE CODIGO = v_MotivoAfastamento;
-     
-    if (nvl(v_HandleMotivoAfastamento,0) = 0) then
-      v_Erro := 'E';
-      UPDATE TMP_MIG_CREDENCIAMENTO 
-         SET STATUS_IMPORTACAO = v_Erro,
-             ERRO = 'MOTIVO AFASTAMENTO NAO ENCONTRADO' 
-       WHERE ROWID = v_RowId;
-    end if;   
+    if(v_CodStatus = '2') then
+      SELECT HANDLE
+        INTO v_HandleMotivoAfastamento
+        FROM SAM_MOTIVOAFASTAMENTO   
+       WHERE CODIGO = v_MotivoAfastamento;
+       
+      if (nvl(v_HandleMotivoAfastamento,0) = 0) then
+        v_Erro := 'E';
+        UPDATE TMP_MIG_CREDENCIAMENTO 
+           SET STATUS_IMPORTACAO = v_Erro,
+               ERRO = 'MOTIVO AFASTAMENTO NAO ENCONTRADO' 
+         WHERE ROWID = v_RowId;
+      end if;   
+    end if;  
   end if;
     
   if((v_CodStatus <> '2') and (nvl(v_Erro,'N') = 'N')) then--ativo
@@ -246,8 +237,8 @@ loop
            v_HandleRegistro,
            v_HandlePrestador,
            v_TipoProcesso,
-           v_CredencimentoDescrData,
-           v_CredencimentoDescrData,
+           v_CredencimentoData,
+           v_CredencimentoData,
            'N',
            NULL PROTOCOLO,
            '5' SITUACAOPROCESSAMENTO,
@@ -271,7 +262,7 @@ loop
       OBSERVACAO
      ) 
      SELECT nextVal('SEQ_PRE0066') HANDLE,
-      v_CredencimentoDescrData DATACREDDESCRED,
+      v_CredencimentoData DATACREDDESCRED,
       1 TIPOCREDENCIAMENTO,
       1 NOVAFILIAL,
       'Registro Migrado' OBSERVACAO
@@ -291,27 +282,31 @@ loop
           JUSTIFICATIVAREPRE)
          SELECT nextVal('SEQ_PRE075') HANDLE,
           '2' TABPARECERSEDE,
-          v_CredencimentoDescrData DATADESCRESEDE,
+          v_CredencimentoData DATADESCRESEDE,
           v_HandleDescredMotivo MOTIVODESCRESEDE,
           'Registro Migrado' JUSTIFICATIVASEDE, 
           1 FILIAL,
           '2' TABPARECERREPRE,
-          v_CredencimentoDescrData DATADESCREREPRE,
+          v_CredencimentoData DATADESCREREPRE,
           v_HandleDescredMotivo MOTIVODESCREREPRE,
           'Registro Migrado' JUSTIFICATIVAREPRE
          FROM DUAL;
       end if;
     end if;
   else 
-    if (v_CodStatus = '2') then
+    if ((v_CodStatus = '2') and (nvl(v_Erro,'N') = 'N')) then
       INSERT INTO SAM_PRESTADOR_AFASTAMENTO
       (HANDLE,
        PRESTADOR,
+       DATAINICIAL,
+       DATAFINAL,
        MOTIVOAFASTAMENTO,
        OBSERVACAO,
        INCLUIDOPOR)
        SELECT nextVal('SEQ_SAM_PRESTADOR_AFASTAMENTO') HANDLE,
               v_HandlePrestador PRESTADOR,
+              v_CredencimentoData,
+              v_DescredenciamentoData,
               v_HandleMotivoAfastamento,
               'Incluido por Migração',
               v_HandleResponsavel
