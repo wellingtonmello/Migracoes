@@ -5,8 +5,8 @@
   <HeaderLines>1</HeaderLines>
   <ConvertFromDOS>0</ConvertFromDOS>
   <FixedColumns>0</FixedColumns>
-  <Separator>,</Separator>
-  <WithQuotes>1</WithQuotes>
+  <Separator>;</Separator>
+  <WithQuotes>0</WithQuotes>
   <LinesPerPack>50</LinesPerPack>
   <lines>
     <line>
@@ -120,57 +120,6 @@
               <From>0</From>
               <Column>9</Column>
               <DateMask>ddmmaaaa</DateMask>
-              <translates>
-              </translates>
-            </field>
-            <field>
-              <FieldName>DATACREDENCIAMENTO</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>3</Classe>
-              <From>0</From>
-              <Column>10</Column>
-              <DateMask>ddmmaaaa</DateMask>
-              <translates>
-              </translates>
-            </field>
-            <field>
-              <FieldName>DATAPRIMEIROCREDEN</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>3</Classe>
-              <From>0</From>
-              <Column>11</Column>
-              <DateMask>ddmmaaaa</DateMask>
-              <translates>
-              </translates>
-            </field>
-            <field>
-              <FieldName>DATADESCREDENCIAMENTO</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>3</Classe>
-              <From>0</From>
-              <Column>12</Column>
-              <DateMask>ddmmaaaa</DateMask>
-              <translates>
-              </translates>
-            </field>
-            <field>
-              <FieldName>MOTIVODESCREDENCIAMENTO</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>4</Classe>
-              <From>0</From>
-              <Column>13</Column>
-              <AlternateKey>1</AlternateKey>
-              <AlternateField>DESCRICAO</AlternateField>
-              <NullIfNotFound>0</NullIfNotFound>
-              <ExtraField></ExtraField>
-              <ExtraValue></ExtraValue>
-              <SearchTable>1735</SearchTable>
-              <SearchFields>
-              </SearchFields>
               <translates>
               </translates>
             </field>
