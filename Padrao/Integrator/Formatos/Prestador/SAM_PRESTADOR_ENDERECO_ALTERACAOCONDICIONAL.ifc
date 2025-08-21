@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <format source="integrator-conv" version="4">
-  <FormatName>SAM_PRESTADOR_ENDERECO</FormatName>
+  <FormatName>SAM_PRESTADOR_ENDERECO_ALTERACAOCONDICIONAL</FormatName>
   <FooterLines>0</FooterLines>
   <HeaderLines>1</HeaderLines>
   <ConvertFromDOS>0</ConvertFromDOS>
   <FixedColumns>0</FixedColumns>
-  <Separator>,</Separator>
+  <Separator>;</Separator>
   <WithQuotes>1</WithQuotes>
   <LinesPerPack>50</LinesPerPack>
   <lines>
@@ -13,7 +13,7 @@
       <tables>
         <table>
           <TableName>SAM_PRESTADOR_ENDERECO</TableName>
-          <Service>5</Service>
+          <Service>3</Service>
           <fields>
             <field>
               <FieldName>PRESTADOR</FieldName>
@@ -46,11 +46,13 @@
             </field>
             <field>
               <FieldName>CEP</FieldName>
-              <SearchKey>0</SearchKey>
+              <SearchKey>1</SearchKey>
               <IsVariable>0</IsVariable>
-              <Classe>0</Classe>
+              <Classe>1</Classe>
               <From>0</From>
               <Column>3</Column>
+              <Accumulative>0</Accumulative>
+              <ForceDecimals>0</ForceDecimals>
               <translates>
               </translates>
             </field>
@@ -105,8 +107,8 @@
               <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
               <Classe>4</Classe>
-              <From>0</From>
-              <Column>7</Column>
+              <From>1</From>
+              <FixedValue>081</FixedValue>
               <AlternateKey>1</AlternateKey>
               <AlternateField>CODIGO</AlternateField>
               <NullIfNotFound>0</NullIfNotFound>
@@ -119,18 +121,8 @@
               </translates>
             </field>
             <field>
-              <FieldName>LOGRADOURO</FieldName>
-              <SearchKey>1</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>0</Classe>
-              <From>0</From>
-              <Column>8</Column>
-              <translates>
-              </translates>
-            </field>
-            <field>
               <FieldName>NUMERO</FieldName>
-              <SearchKey>1</SearchKey>
+              <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
               <Classe>1</Classe>
               <From>0</From>
@@ -322,7 +314,7 @@
               </translates>
             </field>
             <field>
-              <FieldName>DATACANCELAMENTO</FieldName>
+              <FieldName>K_DATACANCELAMENTOMIG</FieldName>
               <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
               <Classe>3</Classe>
@@ -381,7 +373,27 @@
               <Classe>3</Classe>
               <From>0</From>
               <Column>31</Column>
-              <DateMask>ddmmaaaa</DateMask>
+              <DateMask>aaaammdd</DateMask>
+              <translates>
+              </translates>
+            </field>
+            <field>
+              <FieldName>LOGRADOURO</FieldName>
+              <SearchKey>1</SearchKey>
+              <IsVariable>0</IsVariable>
+              <Classe>0</Classe>
+              <From>0</From>
+              <Column>8</Column>
+              <translates>
+              </translates>
+            </field>
+            <field>
+              <FieldName>K_TIPOLOGRADOUROMIG</FieldName>
+              <SearchKey>0</SearchKey>
+              <IsVariable>0</IsVariable>
+              <Classe>0</Classe>
+              <From>0</From>
+              <Column>7</Column>
               <translates>
               </translates>
             </field>
