@@ -37,6 +37,8 @@ class Program
         Console.WriteLine(string.Join(", ", origemHeader));
         Console.Write("Informe as colunas de chave do ARQUIVO_ORIGEM (na mesma ordem das colunas do ARQUIVO_BD, separadas por vírgula): ");
         var origemKeys = Console.ReadLine().Split(',').Select(k => k.Trim()).ToArray();
+        Console.WriteLine("\nDeseja filtrar os importados (I)?  ou os não Importados (N)?");
+        var filtroTipo = Console.ReadLine().Trim().ToUpper();
 
         var bdIndices = Enumerable.Range(0, bdHeader.Length).ToArray();
         var origemIndices = origemKeys.Select(k => Array.IndexOf(origemHeader, k)).ToArray();
@@ -70,6 +72,20 @@ class Program
                 var linha = reader.ReadLine();
                 var partes = linha.Split(';');
                 var chave = string.Join("|", origemIndices.Select(i => partes[i].Trim()));
+                if (filtroTipo == "I" && bdChaves.Contains(chave))
+                {
+                    linhasFiltradas.Add(linha);
+                }
+                else if (filtroTipo == "N" && !bdChaves.Contains(chave))
+                {
+                    linhasFiltradas.Add(linha);
+                }
+                else if (filtroTipo != "I" && filtroTipo != "N" && filtroTipo != "")
+                {
+                    Console.WriteLine("\n❌ Erro: Tipo de filtro inválido. Use 'I' para importados ou 'N' para não importados.");
+                    return;
+                }
+                else
                 if (!bdChaves.Contains(chave))
                 {
                     linhasFiltradas.Add(linha);
