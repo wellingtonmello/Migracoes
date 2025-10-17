@@ -6,14 +6,14 @@
   <ConvertFromDOS>0</ConvertFromDOS>
   <FixedColumns>0</FixedColumns>
   <Separator>;</Separator>
-  <WithQuotes>0</WithQuotes>
-  <LinesPerPack>50</LinesPerPack>
+  <WithQuotes>1</WithQuotes>
+  <LinesPerPack>500</LinesPerPack>
   <lines>
     <line>
       <tables>
         <table>
           <TableName>SAM_PRESTADOR</TableName>
-          <Service>5</Service>
+          <Service>3</Service>
           <fields>
             <field>
               <FieldName>PRESTADOR</FieldName>
@@ -124,13 +124,24 @@
               </translates>
             </field>
             <field>
+              <FieldName>DATAPRIMEIROCREDEN</FieldName>
+              <SearchKey>0</SearchKey>
+              <IsVariable>0</IsVariable>
+              <Classe>3</Classe>
+              <From>0</From>
+              <Column>11</Column>
+              <DateMask>dd/mm/aaaa</DateMask>
+              <translates>
+              </translates>
+            </field>
+            <field>
               <FieldName>DATAREFERENCIAMENTO</FieldName>
               <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
               <Classe>3</Classe>
               <From>0</From>
               <Column>14</Column>
-              <DateMask>ddmmaaaa</DateMask>
+              <DateMask>dd/mm/aaaa</DateMask>
               <translates>
               </translates>
             </field>
@@ -369,7 +380,7 @@
               <Classe>3</Classe>
               <From>0</From>
               <Column>31</Column>
-              <DateMask>aaaammdd</DateMask>
+              <DateMask>ddmmaaaa</DateMask>
               <translates>
               </translates>
             </field>
@@ -672,9 +683,9 @@
               <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
               <Classe>2</Classe>
-              <From>0</From>
-              <Column>58</Column>
-              <TrueStr>S</TrueStr>
+              <From>1</From>
+              <FixedValue>N</FixedValue>
+              <TrueStr>N</TrueStr>
               <translates>
               </translates>
             </field>
@@ -999,42 +1010,6 @@
               </translates>
             </field>
             <field>
-              <FieldName>FILIALPADRAO</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>4</Classe>
-              <From>0</From>
-              <Column>85</Column>
-              <AlternateKey>1</AlternateKey>
-              <AlternateField>CODIGO</AlternateField>
-              <NullIfNotFound>0</NullIfNotFound>
-              <ExtraField></ExtraField>
-              <ExtraValue></ExtraValue>
-              <SearchTable>720</SearchTable>
-              <SearchFields>
-              </SearchFields>
-              <translates>
-              </translates>
-            </field>
-            <field>
-              <FieldName>FILIALCUSTO</FieldName>
-              <SearchKey>0</SearchKey>
-              <IsVariable>0</IsVariable>
-              <Classe>4</Classe>
-              <From>0</From>
-              <Column>86</Column>
-              <AlternateKey>1</AlternateKey>
-              <AlternateField>CODIGO</AlternateField>
-              <NullIfNotFound>0</NullIfNotFound>
-              <ExtraField></ExtraField>
-              <ExtraValue></ExtraValue>
-              <SearchTable>720</SearchTable>
-              <SearchFields>
-              </SearchFields>
-              <translates>
-              </translates>
-            </field>
-            <field>
               <FieldName>UNIDADEPROCESSAMENTO</FieldName>
               <SearchKey>0</SearchKey>
               <IsVariable>0</IsVariable>
@@ -1163,6 +1138,17 @@
               <Column>96</Column>
               <Accumulative>0</Accumulative>
               <ForceDecimals>0</ForceDecimals>
+              <translates>
+              </translates>
+            </field>
+            <field>
+              <FieldName>EXIBIREVENTOSNOEXTRATO</FieldName>
+              <SearchKey>0</SearchKey>
+              <IsVariable>0</IsVariable>
+              <Classe>2</Classe>
+              <From>1</From>
+              <FixedValue>S</FixedValue>
+              <TrueStr>S</TrueStr>
               <translates>
               </translates>
             </field>
