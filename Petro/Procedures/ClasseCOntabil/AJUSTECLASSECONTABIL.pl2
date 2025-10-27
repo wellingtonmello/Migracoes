@@ -1,8 +1,4 @@
-namespace 'clientes';
-procedure AJUSTECLASSECONTABIL(
-  p_Param1                      IN int,
-  p_Param2                      OUT int
-);
+procedure AJUSTECLASSECONTABIL;
 
 version '1.0.0.0';
 
@@ -12,84 +8,33 @@ declare
     c_Classe        cursor;
    v_CODIGO         varchar(30);
     v_NIVEL         int;
-    v_P1            varchar(3);
-    v_P2            varchar(3);
-    v_P3            varchar(3);
-    v_P4            varchar(3);
-    v_P5            varchar(3);
-    v_P6            varchar(3);
-    v_P7            varchar(3);
-    v_P8            varchar(3);
-    v_P9            varchar(3);
-    v_P10           varchar(3);
-    v_P11           varchar(3);
-    v_P12           varchar(3);
-    v_P13           varchar(3);
+    v_RegistroDuplicado int;
     v_DESCRICAO     varchar(100);
     v_HandleNivelSuperior                      int;
     v_UltimoNivel   varchar(1); 
     v_Erro          varchar(50);
     v_HandleExistente int;
     v_HandleRegistroAnterior int;
-    v_Estrutura       varchar(20);
-    v_EstruturaAnterior varchar(20);
-    v_RowNum            varchar(50);
+    v_Estrutura       varchar(40);
+    v_EstruturaAnterior varchar(40);
+    v_RowNum            varchar(100);
 
-begin --InternalName: BS_40BE85D5
-  
-  UPDATE TMP_MIG_CLASSECONTABIL 
-           SET ESTRUTURA =  P1||
-                 CASE WHEN NIVEL = '2' THEN '.'||P2
-                      WHEN NIVEL = '3' THEN  '.'||P2||'.'||P3 
-                      WHEN NIVEL = '4' THEN  '.'||P2||'.'||P3||'.'||P4   
-                      WHEN NIVEL = '5' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5
-                      WHEN NIVEL = '6' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6       
-                      WHEN NIVEL = '7' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7    
-                      WHEN NIVEL = '8' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8    
-                      WHEN NIVEL = '9' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8||'.'||P9    
-                      WHEN NIVEL = '10' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8||'.'||P9||'.'||P10    
-                      WHEN NIVEL = '11' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8||'.'||P9||'.'||P10||'.'||P11    
-                      WHEN NIVEL = '12' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8||'.'||P9||'.'||P10||'.'||P11||'.'||P12    
-                      WHEN NIVEL = '13' THEN   '.'||P2||'.'||P3||'.'||P4||'.'||P5||'.'||P6||'.'||P7||'.'||P8||'.'||P9||'.'||P10||'.'||P11||'.'||P12||'.'||P13    
-                      end;
+begin --InternalName: AJUSTECLASSECONTABIL
+
+    UPDATE SFN_CLASSECONTABIL SET CODIGOREDUZIDO = NULL;
+
                       
    for c_Classe IN
    (SELECT CODIGO,
           NIVEL,
-          P1,
-          P2,
-          P3,
-          P4,
-          P5,
-          P6,
-          P7,
-          P8,
-          P9,
-          P10,
-          P11,
-          P12,
-          P13,
-          DESCRICAO,
+          substr(DESCRICAO,0,50) DESCRICAO,
           HANDLENIVELSUPERIOR,
           ULTIMONIVEL,
           ESTRUTURA,
           ERRO,
-          ROWNUM
+          ROWID
     INTO  v_CODIGO,
           v_NIVEL,
-          v_P1,
-          v_P2,
-          v_P3,
-          v_P4,
-          v_P5,
-          v_P6,
-          v_P7,
-          v_P8,
-          v_P9,
-          v_P10,
-          v_P11,
-          v_P12,
-          v_P13,
           v_DESCRICAO,
           v_HandleNivelSuperior,
           v_UltimoNivel,
@@ -102,20 +47,35 @@ begin --InternalName: BS_40BE85D5
     v_HandleExistente := NULL;
     v_HandleRegistroAnterior := NULL;
     
-    if((nvl(v_NIVEL,0) = 0) or (nvl(v_NIVEL,0) > 13)) then
-       UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVEL INVALIDO' WHERE ROWNUM = v_RowNum;                
-    end if;
     
-     SELECT HANDLE
+    if((nvl(v_NIVEL,0) = 0) or (nvl(v_NIVEL,0) > 12)) then
+       UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVEL INVALIDO' WHERE ROWID = v_RowNum;                
+    end if;
+     
+    
+       
+     SELECT TOP 1 HANDLE
        INTO v_HandleExistente
        FROM SFN_CLASSECONTABIL
-      WHERE ESTRUTURA = v_Estrutura;
+      WHERE ESTRUTURA = v_Estrutura
+       ORDER BY HANDLE;
       
      if (nvl(v_HandleExistente,0) > 0) then --achou na base
+        SELECT COUNT(HANDLE)
+           INTO v_RegistroDuplicado 
+           FROM SFN_CLASSECONTABIL
+          WHERE v_Estrutura like ESTRUTURA ||'%'
+            and NIVEL = v_NIVEL - 1;
+      
+       if (nvl(v_RegistroDuplicado,0) > 1) then
+          UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'ESTRUTURA '||v_Estrutura ||'DUPLICADA' WHERE ROWID = v_RowNum;    
+          return null;
+       end if; 
+       
        SELECT HANDLE
          INTO v_HandleRegistroAnterior 
          FROM SFN_CLASSECONTABIL
-        WHERE v_Estrutura LIKE v_EstruturaAnterior ||'%'
+        WHERE v_Estrutura like ESTRUTURA ||'%'
           and NIVEL = v_NIVEL - 1;
          
         if (nvl(v_HandleRegistroAnterior,0) > 0) then -- achou nivel superior
@@ -125,7 +85,7 @@ begin --InternalName: BS_40BE85D5
              SET CODIGOAUXILIAR = v_CODIGO,
                  NIVEL = v_NIVEL,
                  CODIGOEXTERNO = v_CODIGO,
-                 CODIGOREDUZIDO = strToInt(v_CODIGO),
+                 CODIGOREDUZIDO = v_HandleExistente,
                  DESCRICAO = v_DESCRICAO,
                  NIVELSUPERIOR = v_HandleRegistroAnterior,
                  ULTIMONIVEL = 'S'
@@ -133,16 +93,16 @@ begin --InternalName: BS_40BE85D5
            
            UPDATE TMP_MIG_CLASSECONTABIL 
               set HANDLEREGISTRO = v_HandleExistente
-            WHERE ROWNUM = v_RowNum;  
+            WHERE ROWID = v_RowNum;  
         else
           if (nvl(v_NIVEL,0) > 1) then
-            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWNUM = v_RowNum;
+            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWID = v_RowNum;
           else
              UPDATE SFN_CLASSECONTABIL 
              SET CODIGOAUXILIAR = v_CODIGO,
                  NIVEL = v_NIVEL,
                  CODIGOEXTERNO = v_CODIGO,
-                 CODIGOREDUZIDO = strToInt(v_CODIGO),
+                 CODIGOREDUZIDO = v_HandleExistente,
                  DESCRICAO = v_DESCRICAO,
                  NIVELSUPERIOR = v_HandleRegistroAnterior,
                  ULTIMONIVEL = 'S'
@@ -151,14 +111,28 @@ begin --InternalName: BS_40BE85D5
         end if;
      else
        if (nvl(v_NIVEL,0) > 1) then
+       
+         SELECT COUNT(HANDLE)
+           INTO v_RegistroDuplicado 
+           FROM SFN_CLASSECONTABIL
+          WHERE v_Estrutura like ESTRUTURA ||'%'
+            and NIVEL = v_NIVEL - 1;
+      
+       if (nvl(v_RegistroDuplicado,0) > 1) then
+          UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'ESTRUTURA '||v_Estrutura ||'DUPLICADA' WHERE ROWID = v_RowNum;    
+          return null;
+       end if; 
+       
          SELECT HANDLE
            INTO v_HandleRegistroAnterior 
            FROM SFN_CLASSECONTABIL
-          WHERE v_Estrutura LIKE v_EstruturaAnterior ||'%'
+          WHERE v_Estrutura like ESTRUTURA ||'%'
             and NIVEL = v_NIVEL - 1;
           
          if (nvl(v_HandleRegistroAnterior,0) > 0) then
-           v_HandleExistente := nextVal('SEQ_TMP_SIB');
+           UPDATE SFN_CLASSECONTABIL SET ULTIMONIVEL = 'N' WHERE HANDLE = v_HandleRegistroAnterior;
+           
+           v_HandleExistente := nextVal('SEQ_SFN0015');
            INSERT INTO SFN_CLASSECONTABIL (HANDLE,
                         CODIGOAUXILIAR,
                         CODIGOEXTERNO,
@@ -171,7 +145,7 @@ begin --InternalName: BS_40BE85D5
                  VALUES (v_HandleExistente,
                          v_CODIGO,
                          v_CODIGO,
-                         intToStr(v_CODIGO),
+                         v_HandleExistente,
                          v_DESCRICAO,
                          v_Estrutura,
                          v_HandleRegistroAnterior,
@@ -179,9 +153,9 @@ begin --InternalName: BS_40BE85D5
                          v_NIVEL);  
            UPDATE TMP_MIG_CLASSECONTABIL 
               set HANDLEREGISTRO = v_HandleExistente
-            WHERE ROWNUM = v_RowNum;                    
+            WHERE ROWID = v_RowNum;                    
          else
-            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWNUM = v_RowNum;     
+            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWID = v_RowNum;     
          end if;
        else
           v_HandleExistente := nextVal('SEQ_TMP_SIB');
@@ -205,8 +179,9 @@ begin --InternalName: BS_40BE85D5
                          v_NIVEL); 
             UPDATE TMP_MIG_CLASSECONTABIL 
               set HANDLEREGISTRO = v_HandleExistente
-            WHERE ROWNUM = v_RowNum;                   
+            WHERE ROWID = v_RowNum;                   
        end if;              
-     end if; 
+     end if;
+     v_EstruturaAnterior := v_Estrutura; 
    end loop; 
 end;

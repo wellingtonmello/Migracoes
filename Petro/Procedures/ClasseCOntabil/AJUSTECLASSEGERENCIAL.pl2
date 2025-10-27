@@ -1,0 +1,204 @@
+procedure AJUSTECLASSEGERENCIAL;
+
+version '1.0.0.0';
+
+rem 'Descrever a funcionalidade da procedure';
+
+declare
+    c_Classe        cursor;
+   v_CODIGO         varchar(30);
+    v_NIVEL         int;
+    v_RegistroDuplicado int;
+    v_DESCRICAO     varchar(100);
+    v_HandleNivelSuperior                      int;
+    v_UltimoNivel   varchar(1); 
+    v_Erro          varchar(50);
+    v_HandleExistente int;
+    v_HandleRegistroAnterior int;
+    v_Estrutura       varchar(40);
+    v_EstruturaAnterior varchar(40);
+    v_RowNum            varchar(100);
+
+begin --InternalName: AJUSTECLASSECONTABIL
+
+    UPDATE SFN_CLASSEGERENCIAL SET CODIGOREDUZIDO = NULL;
+
+                      
+   for c_Classe IN
+   (SELECT CODIGO,
+          NIVEL,
+          substr(DESCRICAO,0,50) DESCRICAO,
+          HANDLENIVELSUPERIOR,
+          ULTIMONIVEL,
+          ESTRUTURA,
+          ERRO,
+          ROWID
+    INTO  v_CODIGO,
+          v_NIVEL,
+          v_DESCRICAO,
+          v_HandleNivelSuperior,
+          v_UltimoNivel,
+          v_Estrutura,
+          v_Erro,
+          v_RowNum    
+    FROM TMP_MIG_CLASSECONTABIL
+    ORDER BY CODIGO) loop
+    
+    v_HandleExistente := NULL;
+    v_HandleRegistroAnterior := NULL;
+    
+    
+    if((nvl(v_NIVEL,0) = 0) or (nvl(v_NIVEL,0) > 12)) then
+       UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVEL INVALIDO' WHERE ROWID = v_RowNum;                
+    end if;
+     
+    
+       
+     SELECT TOP 1 HANDLE
+       INTO v_HandleExistente
+       FROM SFN_CLASSEGERENCIAL
+      WHERE ESTRUTURA = v_Estrutura
+       ORDER BY HANDLE;
+      
+     if (nvl(v_HandleExistente,0) > 0) then --achou na base
+        SELECT COUNT(HANDLE)
+           INTO v_RegistroDuplicado 
+           FROM SFN_CLASSEGERENCIAL
+          WHERE v_Estrutura like ESTRUTURA ||'%'
+            and NIVEL = v_NIVEL - 1;
+      
+       if (nvl(v_RegistroDuplicado,0) > 1) then
+          UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'ESTRUTURA '||v_Estrutura ||'DUPLICADA' WHERE ROWID = v_RowNum;    
+          return null;
+       end if; 
+       
+       SELECT HANDLE
+         INTO v_HandleRegistroAnterior 
+         FROM SFN_CLASSEGERENCIAL
+        WHERE v_Estrutura like ESTRUTURA ||'%'
+          and NIVEL = v_NIVEL - 1;
+         
+        if (nvl(v_HandleRegistroAnterior,0) > 0) then -- achou nivel superior
+          UPDATE SFN_CLASSEGERENCIAL SET ULTIMONIVEL = 'N' WHERE HANDLE = v_HandleRegistroAnterior;
+          
+          UPDATE SFN_CLASSEGERENCIAL 
+             SET NIVEL = v_NIVEL,
+                 CODIGOREDUZIDO = v_HandleExistente,
+                 DESCRICAO = v_DESCRICAO,
+                 NIVELSUPERIOR = v_HandleRegistroAnterior,
+                 EHCLASSEIMPOSTO = 'N',
+                 ENVIARANS = 'S',
+                 IMPEDIRLANCAMENTOMANUAL = 'N',
+                 NATUREZA = 'C',
+                 TIPOATO = 'P',
+                 ULTIMONIVEL = 'S'
+           WHERE HANDLE = v_HandleExistente;
+           
+           UPDATE TMP_MIG_CLASSECONTABIL 
+              set HANDLEREGISTRO = v_HandleExistente
+            WHERE ROWID = v_RowNum;  
+        else
+          if (nvl(v_NIVEL,0) > 1) then
+            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWID = v_RowNum;
+          else
+             UPDATE SFN_CLASSEGERENCIAL 
+             SET NIVEL = v_NIVEL,CODIGOREDUZIDO = v_HandleExistente,
+                 DESCRICAO = v_DESCRICAO,
+                 NIVELSUPERIOR = v_HandleRegistroAnterior,
+                 EHCLASSEIMPOSTO = 'N',
+                 ENVIARANS = 'S',
+                 IMPEDIRLANCAMENTOMANUAL = 'N',
+                 NATUREZA = 'C',
+                 TIPOATO = 'P',
+                 ULTIMONIVEL = 'S'
+           WHERE HANDLE = v_HandleExistente;  
+          end if;
+        end if;
+     else
+       if (nvl(v_NIVEL,0) > 1) then
+       
+         SELECT COUNT(HANDLE)
+           INTO v_RegistroDuplicado 
+           FROM SFN_CLASSEGERENCIAL
+          WHERE v_Estrutura like ESTRUTURA ||'%'
+            and NIVEL = v_NIVEL - 1;
+      
+       if (nvl(v_RegistroDuplicado,0) > 1) then
+          UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'ESTRUTURA '||v_Estrutura ||'DUPLICADA' WHERE ROWID = v_RowNum;    
+          return null;
+       end if; 
+       
+         SELECT HANDLE
+           INTO v_HandleRegistroAnterior 
+           FROM SFN_CLASSEGERENCIAL
+          WHERE v_Estrutura like ESTRUTURA ||'%'
+            and NIVEL = v_NIVEL - 1;
+          
+         if (nvl(v_HandleRegistroAnterior,0) > 0) then
+           UPDATE SFN_CLASSEGERENCIAL SET ULTIMONIVEL = 'N' WHERE HANDLE = v_HandleRegistroAnterior;
+           
+           v_HandleExistente := nextVal('SEQ_SFN0015');
+           INSERT INTO SFN_CLASSEGERENCIAL (HANDLE,
+                        CODIGOREDUZIDO,
+                        DESCRICAO,
+                        ESTRUTURA,
+                        NIVELSUPERIOR,
+                        EHCLASSEIMPOSTO,
+                        ENVIARANS,
+                        IMPEDIRLANCAMENTOMANUAL,
+                        NATUREZA,
+                        TIPOATO,
+                        ULTIMONIVEL,
+                        NIVEL)
+                 VALUES (v_HandleExistente,
+                         v_HandleExistente,
+                         v_DESCRICAO,
+                         v_Estrutura,
+                         v_HandleRegistroAnterior,
+                         'N',
+                         'S',
+                         'N',
+                         'C',
+                         'P',
+                         'S',
+                         v_NIVEL);  
+           UPDATE TMP_MIG_CLASSECONTABIL 
+              set HANDLEREGISTRO = v_HandleExistente
+            WHERE ROWID = v_RowNum;                    
+         else
+            UPDATE TMP_MIG_CLASSECONTABIL set ERRO = 'NIVELSUPERIOR NAO ENCONTRADO' WHERE ROWID = v_RowNum;     
+         end if;
+       else
+          v_HandleExistente := nextVal('SEQ_TMP_SIB');
+          INSERT INTO SFN_CLASSEGERENCIAL (HANDLE,
+                        CODIGOREDUZIDO,
+                        DESCRICAO,
+                        ESTRUTURA,
+                        NIVELSUPERIOR,
+                        EHCLASSEIMPOSTO,
+                        ENVIARANS,
+                        IMPEDIRLANCAMENTOMANUAL,
+                        NATUREZA,
+                        TIPOATO,
+                        ULTIMONIVEL,
+                        NIVEL)
+                 VALUES (v_HandleExistente,
+                         v_HandleExistente,
+                         v_DESCRICAO,
+                         v_Estrutura,
+                         v_HandleRegistroAnterior,
+                         'N',
+                         'S',
+                         'N',
+                         'C',
+                         'P',
+                         'S',
+                         v_NIVEL); 
+            UPDATE TMP_MIG_CLASSECONTABIL 
+              set HANDLEREGISTRO = v_HandleExistente
+            WHERE ROWID = v_RowNum;                   
+       end if;              
+     end if;
+     v_EstruturaAnterior := v_Estrutura; 
+   end loop; 
+end;

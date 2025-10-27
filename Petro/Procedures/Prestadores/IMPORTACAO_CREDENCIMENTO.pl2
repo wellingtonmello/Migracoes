@@ -142,7 +142,7 @@ loop
   if (nvl(v_CategoriaCre, 0) > 0) then 
     SELECT HANDLE 
       INTO v_HandleCategoriaPrestador
-      FROM SAM_TIPOPRESTADOR 
+      FROM SAM_CATEGORIA_PRESTADOR
      WHERE CODIGO = v_CategoriaCre;
   else
     SELECT CATEGORIA
@@ -166,7 +166,7 @@ loop
   if (nvl(v_CategoriaDes, 0) > 0) then
     SELECT HANDLE 
       INTO v_HandleCategoriaPrestadorDes
-      FROM SAM_TIPOPRESTADOR 
+      FROM SAM_CATEGORIA_PRESTADOR 
      WHERE CODIGO = v_CategoriaDes;
   else
     SELECT CATEGORIA
