@@ -1,0 +1,18 @@
+SELECT REGEXP_REPLACE(I.OCORRENCIAS, '\d', ''), count(1)  
+  FROM SAM_ROTINAIMP_OCORRENCIA I
+  JOIN SAM_ROTINAIMP R ON (R.HANDLE = I.ROTINAIMP)
+  WHERE  i.rotinaimp >= 447
+    AND I.OCORRENCIAS not like '%Inserid%s:%'
+    AND I.OCORRENCIAS not like '%Alterad%s:%'
+    AND I.OCORRENCIAS not like '%rmino%:%'
+    AND I.OCORRENCIAS not like '%ncoding%'
+    AND I.OCORRENCIAS not like '%sucess%'
+    AND I.OCORRENCIAS not like '%Criando/alterando%'
+    AND I.OCORRENCIAS not like '%Data de cancelamento do beneficiário menor que data adesão%' 
+     AND I.OCORRENCIAS not like '%CEP%'
+     AND I.OCORRENCIAS not like '%CEP%'
+     AND I.OCORRENCIAS not like '%NOME DATA DE NASCIMENTO CONFLITANDO COM RG DA%'
+     AND I.OCORRENCIAS NOT LIKE '%RG DUPLICADO COM RG DA MATRICULA%'
+     AND I.OCORRENCIAS NOT LIKE '%CPF DUPLICADO COM CPF DA MATRICULA%'
+     AND I.OCORRENCIAS NOT LIKE '%NASCIMENTO NOME DA MÃE, NOME E DATA DE NASCIMENTO CONFLITANDO COM RG DA MATRICULA%'  
+  group by REGEXP_REPLACE(I.OCORRENCIAS, '\d', '')   
