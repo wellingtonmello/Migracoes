@@ -1,0 +1,29 @@
+update sam_familia f set f.familia = substr(f.familia,0,length(f.familia)-2)||substr(f.familia,length(f.familia),1)   
+ where  exists (select 1
+  from sam_rotinaimp_fam fam where fam.familiacriada = f.handle)
+  and substr(f.familia,length(f.familia)-1,1) = '0'
+  
+
+           
+    UPDATE SAM_BENEFICIARIO BUP 
+      SET BUP.BENEFICIARIO = (SELECT LPAD(C.CONTRATO,2,'0') || LPAD(F.FAMILIA,10,'0')||LPAD(B.CODIGODEPENDENTE,2,'0') NOVONUMERO                                               
+                                FROM SAM_BENEFICIARIO B 
+                                 JOIN SAM_CONTRATO C ON (C.HANDLE = B.CONTRATO)
+                                JOIN SAM_FAMILIA F ON (F.HANDLE = B.FAMILIA)
+                                WHERE EXISTS 
+                                      (SELECT 1
+                                         FROM SAM_ROTINAIMP_FAM FAM
+                                         WHERE FAM.FAMILIACRIADA = F.HANDLE)
+                                  AND B.HANDLE = BUP.HANDLE) 
+       WHERE EXISTS
+             (SELECT 1
+                FROM SAM_BENEFICIARIO B2 
+                JOIN SAM_CONTRATO C2 ON (C2.HANDLE = B2.CONTRATO)
+                JOIN SAM_FAMILIA F2 ON (F2.HANDLE = B2.FAMILIA)
+                WHERE EXISTS 
+                      (SELECT 1
+                         FROM SAM_ROTINAIMP_FAM FAM2
+                         WHERE FAM2.FAMILIACRIADA = F2.HANDLE)
+                          AND B2.HANDLE = BUP.HANDLE)  
+                                  
+                                                 

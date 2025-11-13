@@ -9,7 +9,7 @@ static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        var folder = "C:\\Users\\wellington.mello\\Downloads\\20251029_beneficiario_emp_1_7_11_12_13_14";
+        var folder = "C:\\Users\\wellington.mello\\Downloads\\20251105_Beneficiarios_Emps_1_7_11_12_13_14";
 
         var txtFiles = Directory.GetFiles(folder, "*.txt");
         int filesProcessed = 0;
@@ -53,9 +53,12 @@ static class Program
                         }
                         else
                         {
-                            if cancel
-                            fileInvalidDates++;
-                            totalInvalidDates++;
+                            if (cancelStr.Replace(" ","") == string.Empty)
+                            {
+                                fileInvalidDates++;
+                                totalInvalidDates++;
+                            }
+                            
                         }
                     }
                 }
