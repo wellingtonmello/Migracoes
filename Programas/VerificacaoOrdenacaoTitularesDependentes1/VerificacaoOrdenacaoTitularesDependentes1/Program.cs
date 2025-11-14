@@ -7,6 +7,7 @@ class Beneficiario
     public int SequencialLinha;
     public string Contrato;
     public string Nome;
+    public string NomeMae;
     public string Familia;
     public string MatriculaFuncional;
     public string Titular;
@@ -31,7 +32,7 @@ class Program
         foreach (var arquivo in arquivos)
         {
             var linhas = File.ReadAllLines(arquivo);
-            string contrato = "", familia = "", matricula = "", titular = "", cpf = "", cpftitular = "", nome = "", dependente = "", status = "", dataCancelamento = "", dataAdesao = "";
+            string contrato = "", familia = "", matricula = "", titular = "", cpf = "", cpftitular = "", nome = "", dependente = "", status = "", dataCancelamento = "", dataAdesao = "", nomeMae = "";
             int sequencialLinha = 0;
             string nomeArquivo = Path.GetFileName(arquivo);
 
@@ -58,6 +59,7 @@ class Program
                                 CPF = cpf,
                                 CPFTitular = cpftitular,
                                 Nome = nome,
+                                NomeMae = nomeMae,
                                 Dependente = dependente,
                                 Status = status,
                                 DataAdesao = dataAdesao,
@@ -83,6 +85,7 @@ class Program
                     case "15":
                         cpf = linha.Length >= 171 ? linha.Substring(160, 11).Trim() : "";
                         nome = linha.Length >= 52 ? linha.Substring(2, 50).Trim() : "";
+                        nomeMae = linha.Length >= 102 ? linha.Substring(52, 50).Trim() : "";
                         break;
 
                     case "20":
@@ -104,6 +107,7 @@ class Program
                                 CPF = cpf,
                                 CPFTitular = cpftitular,
                                 Nome = nome,
+                                NomeMae = nomeMae,
                                 Dependente = dependente,  
                                 Status = status,
                                 DataAdesao = dataAdesao,
@@ -129,6 +133,7 @@ class Program
                     CPF = cpf,
                     CPFTitular = cpftitular,
                     Nome = nome,
+                    NomeMae = nomeMae,
                     Dependente = dependente,
                     Status = status,
                     DataAdesao = dataAdesao,
@@ -143,10 +148,10 @@ class Program
         string csvPath = Path.Combine(downloadsPath, "beneficiarios.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("SEQUENCIAL_LINHA;NOME;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATACANCELAMENTO;ARQUIVO");
+            writer.WriteLine("SEQUENCIAL_LINHA;NOME;NOMEMAE;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATACANCELAMENTO;ARQUIVO");
             foreach (var b in beneficiarios)
             {
-                writer.WriteLine($"{b.SequencialLinha};{b.Nome};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataCancelamento};{b.Arquivo}");
+                writer.WriteLine($"{b.SequencialLinha};{b.Nome};{b.NomeMae};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataCancelamento};{b.Arquivo}");
             }
         }
 
