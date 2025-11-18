@@ -16,7 +16,9 @@ class Beneficiario
     public string Dependente;
     public string Status;
     public string DataAdesao;
-    public string DataCancelamento; 
+    public string DataCancelamento;
+    public string Agencia;
+    public string Banco;
     public string Arquivo;
 }
 
@@ -24,15 +26,22 @@ class Program
 {
     static void Main()
     {
-        string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads\\20251105_Beneficiarios_Emps_1_7_11_12_13_14");
+        string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads\\20251113");
         var arquivos = Directory.GetFiles(downloadsPath, "*.txt");
         var beneficiarios = new List<Beneficiario>();
-
+        int contadorArquivo = 0;
         Console.WriteLine($"Iniciando processamento de {arquivos.Length} arquivos...");
-        foreach (var arquivo in arquivos)
+        foreach (var arquivo in arquivos.OrderBy(f =>
+                                          {
+                                              string nome = Path.GetFileNameWithoutExtension(f);
+                                              string numeroStr = new string(nome.TakeWhile(char.IsDigit).ToArray());
+                                              return int.TryParse(numeroStr, out int numero) ? numero : int.MaxValue;
+                                          })
+                                                    .ToList()
+                                        )
         {
             var linhas = File.ReadAllLines(arquivo);
-            string contrato = "", familia = "", matricula = "", titular = "", cpf = "", cpftitular = "", nome = "", dependente = "", status = "", dataCancelamento = "", dataAdesao = "", nomeMae = "";
+            string contrato = "", familia = "", matricula = "", titular = "", cpf = "", cpftitular = "", nome = "", dependente = "", status = "", dataCancelamento = "", dataAdesao = "", nomeMae = "", agencia = "", banco = "" ;
             int sequencialLinha = 0;
             string nomeArquivo = Path.GetFileName(arquivo);
 
@@ -64,6 +73,8 @@ class Program
                                 Status = status,
                                 DataAdesao = dataAdesao,
                                 DataCancelamento = dataCancelamento,
+                                Agencia = agencia,
+                                Banco = banco,
                                 Arquivo = nomeArquivo
                             });
                         }
@@ -94,6 +105,8 @@ class Program
                         break;
 
                     case "40":
+                        banco = linha.Length >= 7 ? linha.Substring(4, 3).Trim() : "";
+                        agencia = linha.Length >= 11 ? linha.Substring(7, 4).Trim() : "";
                         // Finaliza o registro
                         if (sequencialLinha > 0)
                         {
@@ -112,6 +125,8 @@ class Program
                                 Status = status,
                                 DataAdesao = dataAdesao,
                                 DataCancelamento = dataCancelamento,
+                                Agencia = agencia,
+                                Banco = banco,
                                 Arquivo = nomeArquivo
                             });
                             sequencialLinha = 0;
@@ -138,6 +153,8 @@ class Program
                     Status = status,
                     DataAdesao = dataAdesao,
                     DataCancelamento = dataCancelamento,
+                    Agencia = agencia,
+                    Banco = banco,
                     Arquivo = nomeArquivo
                 });
             }
@@ -148,10 +165,11 @@ class Program
         string csvPath = Path.Combine(downloadsPath, "beneficiarios.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("SEQUENCIAL_LINHA;NOME;NOMEMAE;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATACANCELAMENTO;ARQUIVO");
+            writer.WriteLine("SEQUENCIAL_LINHA;CONTADORARQUIVO;NOME;NOMEMAE;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATACANCELAMENTO;BANCO;AGENCIA;ARQUIVO");
             foreach (var b in beneficiarios)
             {
-                writer.WriteLine($"{b.SequencialLinha};{b.Nome};{b.NomeMae};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataCancelamento};{b.Arquivo}");
+                contadorArquivo++;
+                writer.WriteLine($"{b.SequencialLinha};{contadorArquivo};{b.Nome};{b.NomeMae};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataCancelamento};{b.Banco};{b.Agencia};{b.Arquivo}");
             }
         }
 
