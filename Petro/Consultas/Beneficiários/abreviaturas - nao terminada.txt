@@ -1,0 +1,24 @@
+SELECT X.NOME,X.SITUACAO_NOME, STATUS FROM 
+(SELECT 
+       nome,
+       CASE 
+         WHEN INSTR(TRIM(nome), ' ') = 0 THEN 'Inválido: apenas uma palavra'
+         WHEN REGEXP_LIKE(nome, '[0-9]') THEN 'Inválido: contém números'
+         WHEN REGEXP_LIKE(nome, '[@\"*/{}$^\[\]\\&!=\?+<>()%\.;#~\,]', 'i') THEN 'Inválido: contém caracteres especiais'
+         WHEN REGEXP_LIKE(nome, '\.', 'i') THEN 'Inválido: contém abreviação'
+         WHEN REGEXP_LIKE(nome,'^[A-CE-HJ-NP-TV-ZÁÉÍÓÚÂÊÔÃÕÇ]\s','i') THEN 'Inválido: Primeiro nome com apenas uma letra, exceto quando o primeiro nome for: D, I, O, U, Y (com ou sem acento)'
+         WHEN REGEXP_LIKE(nome,'\s[A-HJ-NP-TV-ZÁÉÍÓÚÂÊÔÃÕÇ]$','i') THEN 'Inválido: Último nome com apenas uma letra, exceto quando o último nome for: I, O, U, Y (com ou sem acento)'
+         WHEN REGEXP_LIKE(
+                          nome,
+                          '(^[A-CE-HJ-NP-TV-ZÁÉÍÓÚÂÊÔÃÕÇ]\s|(\s[A-ZÁÉÍÓÚÂÊÔÃÕÇ]\s)|\s[A-HJ-NP-TV-ZÁÉÍÓÚÂÊÔÃÕÇ]$)',
+                          'i'
+                        )
+                   THEN 'Inválido: Nome contém abreviaturas'
+
+         ELSE 'Válido' 
+       END AS SITUACAO_NOME,
+       CASE WHEN TO_NUMBER(STATUS) IN (75,999) THEN 'Suspenso'
+       ELSE 'Ativo' END STATUS
+FROM  tmp_analise_beneficiario tmp
+where datacancelamento is null) X
+WHERE X.SITUACAO_NOME LIKE 'Inválido%'
