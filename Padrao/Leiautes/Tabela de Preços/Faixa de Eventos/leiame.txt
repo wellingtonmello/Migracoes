@@ -1,0 +1,5 @@
+O leiaute da pasta ESTADO são caso as extrações sejam de fato separadas contendo os registros associados ao estado pela sigla
+O leiaute da pasta PRESTADOR são caso as extrações sejam de fato separadas contendo os registros associados ao prestador pelo codigo  identificador do prestador
+o Arquivo "Faixa de Eventos por multiplos niveis" serve para a impossibilidade de separar esses arquivos conforme indicado anteriormente. Então, possui a coluna NÍVEL
+para indicar se é por ESTADO, PRESTADOR ou GERAL e o campo Chave, para ser preenchido com a Sigla do Estado, nivel indicado for um nivel de estado. com 
+o codigo do prestador, quando o Nível informado for um nível PRESTADOR, e vazio, quando o Nivel em questão for GERAL

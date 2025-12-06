@@ -1,0 +1,272 @@
+procedure TrataDadosBeneficarios;
+
+version '1.0.0.0';
+
+rem 'Inserir Suspensão nos beneficiários para que impacte nas autorizações e processamento de contas';
+
+declare
+c_TmpBenef   cursor;
+v_TipoFaturamento   varchar(1);
+v_Contrato          int;
+v_Carteirinha       varchar(20);
+v_ContaCorrente     varchar(12);
+v_DVCC              varchar(1);
+v_Agencia           varchar(6);
+v_Banco             varchar(5);
+v_Cpf               varchar(20);
+v_HandleAgencia     int;
+v_HandleBanco       int;
+v_HandleBenef       int;
+v_HandleMatricula   int;
+v_HandleDadosBancarios int;
+vS_AbrirTransacao              varchar(1);
+viQtdeEvento                   int;
+viDivisorCommit                int;
+
+begin --InternalName: BS_0427EB06
+
+  UPDATE SAM_BENEFICIARIO SET K9_BENEFICIARIOID = CODIGOANTIGO WHERE K9_BENEFICIARIOID is NULL;
+  
+  INSERT INTO SAM_BENEFICIARIO_SUSPENSAO (HANDLE,
+          DATAINICIAL,
+          MOTIVOSUSPENSAO,
+          BENEFICIARIO,
+          FATURARMESESSUSPENSOS,
+          INFORMACOES)
+  SELECT Seq_Sam_Beneficiario_Suspensao.Nextval HANDLE,
+         B.DATAADESAO DATAINICIAL,
+         MS.HANDLE MOTIVOSUSPENSAO,
+         B.HANDLE BENEFICIARIO,
+         'N' FATURARMESESSUSPENSOS,
+         'SUSPENSAO MIGRADA' INFORMACOES
+    FROM SAM_BENEFICIARIO B
+    JOIN SAM_SITUACAORH SRH ON (SRH.HANDLE = B.SITUACAORH AND SRH.CONTRATO = B.CONTRATO)
+    JOIN SAM_MOTIVOSUSPENSAO MS ON (SRH.MOTIVOSUSPENSAO = MS.HANDLE)
+  WHERE SRH.TABTIPOSITUACAO = '3'  
+     AND NOT EXISTS (SELECT 1
+                      FROM SAM_BENEFICIARIO_SUSPENSAO BS2 WHERE BS2.BENEFICIARIO =B.HANDLE);
+  
+  
+  UPDATE TMP_ANALISE_BENEFICIARIOS TMP 
+     SET TMP.CARTEIRINHA = LPAD(TO_NUMBER(TMP.CONTRATO),2,0)||LPAD(TMP.MATRICULAFUNCIONAL,8,0)||LPAD(TO_NUMBER(TMP.SEQUENCIALDEP),2,0)
+   WHERE TMP.CARTEIRINHA is NULL;
+   
+  viQtdeEvento := 0;
+  viDivisorCommit := 20000; 
+  
+  for c_TmpBenef IN (SELECT TO_NUMBER(CONTRATO) CONTRATO,
+              CARTEIRINHA,
+              AGENCIA,
+              TO_NUMBER(BANCO) BANCO,
+              CONTACORRENTE,
+              DVCC
+         INTO v_Contrato,
+              v_Carteirinha,
+              v_Agencia,
+              v_Banco,     
+              v_ContaCorrente,
+              v_DVCC
+         FROM TMP_ANALISE_BENEFICIARIOS
+        WHERE AGENCIA is not NULL
+           or BANCO is not NULL
+           or CONTACORRENTE is not NULL) loop
+  
+  v_HandleBanco := 0;
+  v_HandleAgencia := 0;
+  v_HandleBenef := 0;
+  v_HandleMatricula := 0;
+  v_Cpf :='';
+  v_HandleAgencia := 0;
+  
+  vS_AbrirTransacao := 'S';
+
+  if (vS_AbrirTransacao = 'S') and (mod(viQtdeEvento, viDivisorCommit) = 0) then
+    vS_AbrirTransacao := 'S';
+    beginTran;
+  end if;
+  
+  SELECT HANDLE,
+         MATRICULA
+    INTO v_HandleBenef,
+         v_HandleMatricula
+    FROM SAM_BENEFICIARIO WHERE CARTAO = v_Carteirinha;
+  
+  if nvl(v_HandleBenef,0) > 0 then
+    SELECT CPF 
+      INTO v_Cpf
+      FROM SAM_MATRICULA M
+     WHERE HANDLE = v_HandleMatricula;
+     
+    SELECT LOCALFATURAMENTO
+      INTO v_TipoFaturamento 
+      FROM SAM_CONTRATO
+     WHERE CONTRATO = v_Contrato;
+     
+    SELECT TOP 1HANDLE
+      INTO v_HandleBanco
+      FROM SFN_BANCO
+     WHERE TO_NUMBER(CODIGO) = v_Banco
+     ORDER BY HANDLE;
+     
+    if nvl(v_HandleBanco,0) > 0 then
+       SELECT TOP 1 HANDLE
+         INTO v_HandleAgencia
+         FROM SFN_AGENCIA
+        WHERE AGENCIA = v_Agencia
+          and BANCO = v_HandleBanco
+        ORDER BY HANDLE;
+        
+       if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'C' )) then
+         DELETE FROM SAM_MATRICULA_DADOSBANCARIOS B WHERE B.MATRICULA = v_HandleMatricula;
+           
+         v_HandleDadosBancarios := nextVal('SEQ_SAM_MATRICULA_DADOSBANCARI');
+         INSERT INTO SAM_MATRICULA_DADOSBANCARIOS MB
+         (HANDLE,
+         MATRICULA,
+         AGENCIA,
+         BANCO,
+         CONTACORRENTE,
+         DV,
+         TITULAR)
+         VALUES
+         (v_HandleDadosBancarios,
+         v_HandleMatricula,
+         v_HandleAgencia,
+         v_HandleBanco,
+         v_ContaCorrente,
+         v_DVCC,
+         'MIGRACAO');
+       
+       
+       else 
+  		   if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'F' )) then
+           UPDATE SFN_CONTAFIN 
+              SET BANCO = v_HandleBanco, 
+                  AGENCIA = v_HandleAgencia, 
+                  CONTACORRENTE =  v_ContaCorrente,
+                  DV = v_DVCC
+           WHERE BENEFICIARIO = v_HandleBenef;
+         else 
+  		     if  (nvl(v_HandleAgencia,0) = 0) then
+             v_HandleAgencia := nextVal('SEQ_SFN_AGENCIA');
+             INSERT INTO SFN_AGENCIA
+             (HANDLE,
+             AGENCIA,
+             BANCO,
+             NOME) 
+             VALUES
+             (v_HandleAgencia,
+             v_Agencia,
+             v_HandleBanco,
+             'MIGRADO');
+            
+             if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'C' )) then
+               DELETE FROM SAM_MATRICULA_DADOSBANCARIOS B WHERE B.MATRICULA = v_HandleMatricula;
+             
+               v_HandleDadosBancarios := nextVal('SEQ_SAM_MATRICULA_DADOSBANCARI');
+              
+               INSERT INTO SAM_MATRICULA_DADOSBANCARIOS MB
+               (HANDLE,
+               MATRICULA,
+               AGENCIA,
+               BANCO,
+               CONTACORRENTE,
+               DV,
+               TITULAR)
+               VALUES
+               (v_HandleDadosBancarios,
+               v_HandleMatricula,
+               v_HandleAgencia,
+               v_HandleBanco,
+               v_ContaCorrente,
+               v_DVCC,
+               'MIGRACAO');
+               
+               
+             else 
+               if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'F' )) then
+                UPDATE SFN_CONTAFIN 
+                   SET BANCO = v_HandleBanco, 
+                       AGENCIA = v_HandleAgencia, 
+                       CONTACORRENTE =  v_ContaCorrente,
+                       DV = v_DVCC
+                 WHERE BENEFICIARIO = v_HandleBenef;
+               end if;
+             end if;  
+           end if;
+         end if;
+       end if;  
+    else
+       v_HandleBanco :=  nextVal('SEQ_SFN_BANCO'); 
+       INSERT INTO SFN_BANCO
+       (HANDLE,
+        CODIGO,
+        NOME)
+       VALUES
+       (v_HandleBanco,
+        v_Banco,
+        'MIGRACAO');
+       
+       v_HandleAgencia := nextVal('SEQ_SFN_AGENCIA');
+       INSERT INTO SFN_AGENCIA
+          (HANDLE,
+          AGENCIA,
+          BANCO,
+          NOME) 
+          VALUES
+          (v_HandleAgencia,
+          v_Agencia,
+          v_HandleBanco,
+          'MIGRADO'); 
+      if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'C' )) then
+        DELETE FROM SAM_MATRICULA_DADOSBANCARIOS B WHERE B.MATRICULA = v_HandleMatricula;
+         
+         v_HandleDadosBancarios := nextVal('SEQ_SAM_MATRICULA_DADOSBANCARI');
+         INSERT INTO SAM_MATRICULA_DADOSBANCARIOS MB
+        (HANDLE,
+         MATRICULA,
+         AGENCIA,
+         BANCO,
+         CONTACORRENTE,
+         DV,
+         TITULAR)
+         VALUES
+         (v_HandleDadosBancarios,
+         v_HandleMatricula,
+         v_HandleAgencia,
+         v_HandleBanco,
+         v_ContaCorrente,
+         v_DVCC,
+         'MIGRACAO');
+     
+     
+      else 
+        if ((nvl(v_HandleAgencia,0) > 0) and (v_TipoFaturamento = 'F' )) then
+          UPDATE SFN_CONTAFIN 
+             SET BANCO = v_HandleBanco, 
+                 AGENCIA = v_HandleAgencia, 
+                 CONTACORRENTE =  v_ContaCorrente,
+                 DV = v_DVCC
+          WHERE BENEFICIARIO = v_HandleBenef;
+        end if;      
+      end if;
+    end if;
+  end if;
+  
+  v_Contrato := 0;
+  v_Carteirinha := '';
+  v_Agencia := '';
+  v_Banco := '';     
+  v_ContaCorrente :='';
+  v_DVCC  := '';
+  
+  viQtdeEvento := viQtdeEvento + 1;
+
+  if (vS_AbrirTransacao = 'S') and (mod(viQtdeEvento, viDivisorCommit) = 0) then
+    commit;
+  end if;
+  
+  end loop;
+  
+  commit;
+end;
