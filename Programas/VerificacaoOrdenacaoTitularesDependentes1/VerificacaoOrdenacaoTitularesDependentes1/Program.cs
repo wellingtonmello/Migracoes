@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 
 class Beneficiario
 {
@@ -8,6 +9,7 @@ class Beneficiario
     public string Contrato;
     public string Nome;
     public string NomeMae;
+    public string NomePai;
     public string Familia;
     public string MatriculaFuncional;
     public string Titular;
@@ -17,11 +19,20 @@ class Beneficiario
     public string Status;
     public string DataAdesao;
     public string DataCancelamento;
+    public string DataFalecimento;
     public string Agencia;
     public string Banco;
     public string ContaCorrente;
     public string DVCC;
     public string CodigoAntigo;
+    public string LogradouroResidencial;
+    public string ComplementoResidencial;
+    public string BairroResidencial;
+    public string CepResidencial;
+    public string LogradouroCorrespondencia;
+    public string ComplementoCorrespondencia;   
+    public string BairroCorrespondencia;
+    public string CepCorrespondencia;
     public string Arquivo;
 }
 
@@ -45,6 +56,8 @@ class Program
         {
             var linhas = File.ReadAllLines(arquivo);
             string contrato = "", familia = "", matricula = "", titular = "", cpf = "", cpftitular = "", nome = "", dependente = "", status = "", dataCancelamento = "", dataAdesao = "", nomeMae = "", agencia = "", banco = "" ,codigoAntigo = "", contaCorrente = "", dvCC = "";
+            string logradouroResidencial = "", complementoResidencial = "", bairroResidencial = "", cepResidencial = "", logradouroCorrespondencia = "", complementoCorrespondencia = "", bairroCorrespondencia = "", cepCorrespondencia = "", nomePai = "", dataFalecimento = "";
+
             int sequencialLinha = 0;
             string nomeArquivo = Path.GetFileName(arquivo);
 
@@ -73,15 +86,25 @@ class Program
                                 CPFTitular = cpftitular,
                                 Nome = nome,
                                 NomeMae = nomeMae,
+                                NomePai = nomePai,
                                 Dependente = dependente,
                                 Status = status,
                                 DataAdesao = dataAdesao,
                                 DataCancelamento = dataCancelamento,
+                                DataFalecimento = dataFalecimento,
                                 Agencia = agencia,
                                 Banco = banco,
                                 ContaCorrente = contaCorrente,
                                 DVCC = dvCC,
                                 CodigoAntigo = codigoAntigo,
+                                LogradouroCorrespondencia = logradouroCorrespondencia,
+                                ComplementoCorrespondencia = complementoCorrespondencia,
+                                BairroCorrespondencia = bairroCorrespondencia,
+                                CepCorrespondencia = cepCorrespondencia,
+                                LogradouroResidencial = logradouroResidencial,
+                                ComplementoResidencial = complementoResidencial,
+                                BairroResidencial = bairroResidencial,
+                                CepResidencial = cepResidencial,
                                 Arquivo = nomeArquivo
                                 
                             });
@@ -89,6 +112,7 @@ class Program
                             familia = "";
                             matricula = "";
                             titular = "";   
+                            nomePai = "";
                             cpf = "";
                             cpftitular = "";
                             nome = "";
@@ -97,11 +121,20 @@ class Program
                             status = "";
                             dataAdesao = "";
                             dataCancelamento = "";
+                            dataFalecimento = "";
                             agencia = "";
                             banco = "";
                             contaCorrente = "";
                             dvCC = "";
                             codigoAntigo = "";
+                            logradouroCorrespondencia = "";
+                            complementoCorrespondencia = "";
+                            bairroCorrespondencia = "";
+                            cepCorrespondencia = "";
+                            logradouroResidencial = "";
+                            complementoResidencial = "";
+                            bairroResidencial = "";
+                            cepResidencial = "";
 
                         }
 
@@ -124,6 +157,22 @@ class Program
                         cpf = linha.Length >= 171 ? linha.Substring(160, 11).Trim() : "";
                         nome = linha.Length >= 52 ? linha.Substring(2, 50).Trim() : "";
                         nomeMae = linha.Length >= 102 ? linha.Substring(52, 50).Trim() : "";
+                        nomePai = linha.Length >= 152 ? linha.Substring(102, 50).Trim() : "";
+                        dataFalecimento = linha.Length >= 230 ? linha.Substring(222, 8).Trim() : "";
+                        break;
+
+                    case "16":
+                        logradouroResidencial = Regex.Replace(linha.Length >= 99 ? linha.Substring(49, 50).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        complementoResidencial = Regex.Replace(linha.Length >= 139 ? linha.Substring(99, 40).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        bairroResidencial = Regex.Replace(linha.Length >= 189 ? linha.Substring(149, 40).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        cepResidencial = linha.Length >= 49 ? linha.Substring(39, 10).Trim() : "";
+                        break;
+                     
+                    case "18":
+                        logradouroCorrespondencia = Regex.Replace(linha.Length >= 99 ? linha.Substring(49, 50).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        complementoCorrespondencia = Regex.Replace(linha.Length >= 139 ? linha.Substring(99, 40).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        bairroCorrespondencia = Regex.Replace(linha.Length >= 189 ? linha.Substring(149, 40).Trim() : "", @"[^a-zA-Z0-9 ]", "");
+                        cepCorrespondencia = linha.Length >= 49 ? linha.Substring(39, 10).Trim() : "";
                         break;
 
                     case "20":
@@ -150,15 +199,25 @@ class Program
                                 CPFTitular = cpftitular,
                                 Nome = nome,
                                 NomeMae = nomeMae,
+                                NomePai = nomePai,
                                 Dependente = dependente,  
                                 Status = status,
                                 DataAdesao = dataAdesao,
+                                DataFalecimento = dataFalecimento,
                                 DataCancelamento = dataCancelamento,
                                 Agencia = agencia,
                                 Banco = banco,
                                 ContaCorrente = contaCorrente,
                                 DVCC = dvCC,
                                 CodigoAntigo = codigoAntigo,
+                                LogradouroCorrespondencia = logradouroCorrespondencia,
+                                ComplementoCorrespondencia = complementoCorrespondencia,
+                                BairroCorrespondencia = bairroCorrespondencia,
+                                CepCorrespondencia = cepCorrespondencia,
+                                LogradouroResidencial = logradouroResidencial,
+                                ComplementoResidencial = complementoResidencial,
+                                BairroResidencial = bairroResidencial,
+                                CepResidencial = cepResidencial,
                                 Arquivo = nomeArquivo
                             });
                             sequencialLinha = 0;
@@ -170,15 +229,26 @@ class Program
                             cpftitular = "";
                             nome = "";
                             nomeMae = "";
+                            nomePai = "";
                             dependente = "";
                             status = "";
                             dataAdesao = "";
                             dataCancelamento = "";
+                            dataFalecimento = "";
                             agencia = "";
                             banco = "";
                             contaCorrente = "";
                             dvCC = "";
                             codigoAntigo = "";
+                            logradouroCorrespondencia = "";
+                            complementoCorrespondencia = "";
+                            bairroCorrespondencia = "";
+                            cepCorrespondencia = "";
+                            logradouroResidencial = "";
+                            complementoResidencial = "";
+                            bairroResidencial = "";
+                            cepResidencial = "";
+
                         }
                         break;
                 }
@@ -198,15 +268,25 @@ class Program
                     CPFTitular = cpftitular,
                     Nome = nome,
                     NomeMae = nomeMae,
+                    NomePai = nomePai,
                     Dependente = dependente,
                     Status = status,
                     DataAdesao = dataAdesao,
+                    DataFalecimento = dataFalecimento,
                     DataCancelamento = dataCancelamento,
                     Agencia = agencia,
                     Banco = banco,
                     ContaCorrente = contaCorrente,
                     DVCC = dvCC,
                     CodigoAntigo = codigoAntigo,
+                    LogradouroCorrespondencia = logradouroCorrespondencia,
+                    ComplementoCorrespondencia = complementoCorrespondencia,
+                    BairroCorrespondencia = bairroCorrespondencia,
+                    CepCorrespondencia = cepCorrespondencia,
+                    LogradouroResidencial = logradouroResidencial,
+                    ComplementoResidencial = complementoResidencial,
+                    BairroResidencial = bairroResidencial,
+                    CepResidencial = cepResidencial,
                     Arquivo = nomeArquivo
                 });
             }
@@ -217,11 +297,12 @@ class Program
         string csvPath = Path.Combine(downloadsPath, "beneficiarios.csv");
         using (var writer = new StreamWriter(csvPath))
         {
-            writer.WriteLine("SEQUENCIAL_LINHA;CONTADORARQUIVO;NOME;NOMEMAE;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATACANCELAMENTO;BANCO;AGENCIA;CONTACORRENTE;DVCC;CODIGOANTIGO;ARQUIVO;");
+            writer.WriteLine("SEQUENCIAL_LINHA;CONTADORARQUIVO;NOME;NOMEMAE;NOMEPAI;CONTRATO;FAMILIA;SEQUENCIALDEP;MATRICULAFUNCIONAL;TITULAR;CPF;CPFTITULAR;STATUS;DATAADESAO;DATAFALECIMENTO;DATACANCELAMENTO;BANCO;AGENCIA;CONTACORRENTE;DVCC;CODIGOANTIGO;LOGRADOUROCORR;COMPLEMENTOCORRESP;BAIRROCORRESP;CEPCORRESP;LOGRADOURORES;COMPLEMENTORES;BAIRRORES;CEPRES;ARQUIVO;");
             foreach (var b in beneficiarios)
             {
                 contadorArquivo++;
-                writer.WriteLine($"{b.SequencialLinha};{contadorArquivo};{b.Nome};{b.NomeMae};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataCancelamento};{b.Banco};{b.Agencia};{b.ContaCorrente};{b.DVCC};{b.CodigoAntigo};{b.Arquivo};");
+                writer.WriteLine($"{b.SequencialLinha};{contadorArquivo};{b.Nome};{b.NomeMae};{b.NomePai};{b.Contrato};{b.Familia};{b.Dependente};{b.MatriculaFuncional};{b.Titular};{b.CPF};{b.CPFTitular};{b.Status};{b.DataAdesao};{b.DataFalecimento};{b.DataCancelamento};{b.Banco};{b.Agencia};{b.ContaCorrente};{b.DVCC};{b.CodigoAntigo};" +
+                    $"{b.LogradouroCorrespondencia};{b.ComplementoCorrespondencia};{b.BairroCorrespondencia};{b.CepCorrespondencia};{b.LogradouroResidencial};{b.ComplementoResidencial};{b.BairroResidencial};{b.CepResidencial};{b.Arquivo};");
             }
         }
 
